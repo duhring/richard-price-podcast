@@ -7,7 +7,7 @@ import { fileURLToPath, URL } from 'node:url'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(),tailwindcss()],
-  base: '/',
+  base: '/richard-price-podcast/',
   server: {
     allowedHosts: ['web-app-tunnel-u488x2tt.devinapps.com']
   },
