@@ -49,6 +49,8 @@ if (!fs.existsSync(audioDir)) {
   fs.mkdirSync(audioDir, { recursive: true });
 }
 
+app.use('/audio', express.static(path.join(__dirname, 'public', 'audio')));
+
 app.post('/api/upload-video', upload.single('video'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({
@@ -69,6 +71,8 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
     const audioFileName = `extracted-${Date.now()}.mp3`;
     const audioPath = path.join(audioDir, audioFileName);
     
+    let responseSent = false;
+    
     const ffmpegProcess = spawn('ffmpeg', [
       '-i', videoPath,
       '-vn', // No video
@@ -86,12 +90,15 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
     });
     
     ffmpegProcess.on('close', (code) => {
+      if (responseSent) return;
+      
       fs.unlink(videoPath, (err) => {
         if (err) console.error('Error deleting video file:', err);
       });
       
       if (code === 0) {
         console.log('Audio extraction successful:', audioFileName);
+        responseSent = true;
         res.json({
           success: true,
           audio_file: `/audio/${audioFileName}`,
@@ -100,6 +107,7 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
         });
       } else {
         console.error('FFmpeg extraction failed:', error);
+        responseSent = true;
         res.status(500).json({
           success: false,
           error: 'Failed to extract audio from video'
@@ -107,13 +115,20 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
       }
     });
     
-    setTimeout(() => {
-      ffmpegProcess.kill('SIGTERM');
-      res.status(408).json({
-        success: false,
-        error: 'Audio extraction timed out'
-      });
+    const timeoutId = setTimeout(() => {
+      if (!responseSent) {
+        ffmpegProcess.kill('SIGTERM');
+        responseSent = true;
+        res.status(408).json({
+          success: false,
+          error: 'Audio extraction timed out'
+        });
+      }
     }, 300000); // 5 minutes timeout for video processing
+    
+    ffmpegProcess.on('close', () => {
+      clearTimeout(timeoutId);
+    });
     
   } catch (error) {
     console.error('Server error:', error);

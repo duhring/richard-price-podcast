@@ -7,6 +7,7 @@ const YouTubeApp = ({ appData, audioFile }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioSrc, setAudioSrc] = useState(audioFile);
+  const [isUploading, setIsUploading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState(null);
   const audioRef = useRef(null);
@@ -101,29 +102,42 @@ const YouTubeApp = ({ appData, audioFile }) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    setIsExtracting(true);
+    console.log('Starting video upload:', file.name);
+    setIsUploading(true);
+    setIsExtracting(false);
     setExtractionError(null);
 
     try {
       const formData = new FormData();
       formData.append('video', file);
 
+      console.log('Uploading video file...');
       const response = await fetch('/api/upload-video', {
         method: 'POST',
         body: formData,
       });
 
+      setIsUploading(false);
+      setIsExtracting(true);
+      
+      console.log('Backend response status:', response.status);
       const result = await response.json();
+      console.log('Backend response data:', result);
 
       if (result.success) {
+        console.log('Setting audio source to:', result.audio_file);
         setAudioSrc(result.audio_file);
         setExtractionError(null);
       } else {
+        console.error('Upload failed:', result.error);
         setExtractionError(result.error || 'Failed to extract audio from video');
       }
     } catch (error) {
+      console.error('Video upload error:', error);
       setExtractionError(`Video upload failed: ${error.message}`);
     } finally {
+      console.log('Upload process completed');
+      setIsUploading(false);
       setIsExtracting(false);
     }
   };
@@ -221,15 +235,33 @@ const YouTubeApp = ({ appData, audioFile }) => {
                 )}
               </button>
               
-              <label className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Video File
+              <label className={`inline-flex items-center px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+                isUploading || isExtracting 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-purple-600 hover:bg-purple-700'
+              } text-white`}>
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading Video...
+                  </>
+                ) : isExtracting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Extracting Audio...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Video File
+                  </>
+                )}
                 <input
                   type="file"
                   accept="video/*"
                   onChange={handleVideoUpload}
                   className="hidden"
-                  disabled={isExtracting}
+                  disabled={isUploading || isExtracting}
                 />
               </label>
               

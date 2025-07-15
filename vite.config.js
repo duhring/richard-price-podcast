@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [react(),tailwindcss()],
   base: '/richard-price-podcast/',
   server: {
-    allowedHosts: ['web-app-tunnel-6z1a7r3r.devinapps.com'],
+    allowedHosts: ['web-app-tunnel-bvyrqpf7.devinapps.com'],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
