@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, RotateCcw } from 'lucide-react';
 
 // Import assets
@@ -148,50 +148,64 @@ function App() {
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) {
-      const updateTime = () => setCurrentTime(audio.currentTime);
+      let timeUpdateThrottle = null;
+      
+      const updateTime = () => {
+        if (timeUpdateThrottle) return;
+        timeUpdateThrottle = setTimeout(() => {
+          setCurrentTime(audio.currentTime);
+          timeUpdateThrottle = null;
+        }, 100);
+      };
+      
       const updateDuration = () => setDuration(audio.duration);
+      const handleEnded = () => setIsPlaying(false);
       
       audio.addEventListener('timeupdate', updateTime);
       audio.addEventListener('loadedmetadata', updateDuration);
-      audio.addEventListener('ended', () => setIsPlaying(false));
+      audio.addEventListener('ended', handleEnded);
       
       return () => {
+        if (timeUpdateThrottle) clearTimeout(timeUpdateThrottle);
         audio.removeEventListener('timeupdate', updateTime);
         audio.removeEventListener('loadedmetadata', updateDuration);
-        audio.removeEventListener('ended', () => setIsPlaying(false));
+        audio.removeEventListener('ended', handleEnded);
       };
     }
   }, []);
 
   useEffect(() => {
-    // Auto-advance sections based on audio time
-    const currentSectionIndex = transcriptSections.findIndex(
-      section => currentTime >= section.startTime && currentTime < section.endTime
-    );
-    if (currentSectionIndex !== -1 && currentSectionIndex !== currentSection) {
-      setCurrentSection(currentSectionIndex);
-    }
+    const debounceTimer = setTimeout(() => {
+      const currentSectionIndex = transcriptSections.findIndex(
+        section => currentTime >= section.startTime && currentTime < section.endTime
+      );
+      if (currentSectionIndex !== -1 && currentSectionIndex !== currentSection) {
+        setCurrentSection(currentSectionIndex);
+      }
+    }, 50);
+    
+    return () => clearTimeout(debounceTimer);
   }, [currentTime, currentSection]);
 
-  const togglePlayPause = () => {
+  const togglePlayPause = useCallback(() => {
     const audio = audioRef.current;
     if (audio) {
       if (isPlaying) {
         audio.pause();
       } else {
-        audio.play();
+        audio.play().catch(console.error);
       }
       setIsPlaying(!isPlaying);
     }
-  };
+  }, [isPlaying]);
 
-  const seekToSection = (sectionIndex) => {
+  const seekToSection = useCallback((sectionIndex) => {
     const audio = audioRef.current;
     if (audio && sectionIndex >= 0 && sectionIndex < transcriptSections.length) {
       audio.currentTime = transcriptSections[sectionIndex].startTime;
       setCurrentSection(sectionIndex);
     }
-  };
+  }, []);
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -199,7 +213,7 @@ function App() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const navigateSection = (direction) => {
+  const navigateSection = useCallback((direction) => {
     let newIndex;
     if (direction === 'prev') {
       newIndex = Math.max(0, currentSection - 1);
@@ -210,17 +224,17 @@ function App() {
     if (newIndex !== undefined && newIndex !== currentSection) {
       seekToSection(newIndex);
     }
-  };
+  }, [currentSection, seekToSection]);
 
-  const goToStart = () => {
+  const goToStart = useCallback(() => {
     const audio = audioRef.current;
     if (audio) {
       audio.currentTime = 0;
       setCurrentSection(0);
     }
-  };
+  }, []);
 
-  const handleProgressClick = (e) => {
+  const handleProgressClick = useCallback((e) => {
     const audio = audioRef.current;
     if (audio && duration) {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -228,7 +242,7 @@ function App() {
       const newTime = (clickX / rect.width) * duration;
       audio.currentTime = newTime;
     }
-  };
+  }, [duration]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -299,7 +313,8 @@ function App() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={goToStart}
-                    className="p-3 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95"
+                    className="p-3 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 touch-manipulation"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                     title="Go to start"
                   >
                     <RotateCcw className="w-5 h-5 text-slate-700 dark:text-slate-300" />
@@ -307,7 +322,8 @@ function App() {
                   
                   <button
                     onClick={() => navigateSection('prev')}
-                    className="p-3 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className="p-3 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 touch-manipulation"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                     disabled={currentSection === 0}
                   >
                     <SkipBack className="w-5 h-5 text-slate-700 dark:text-slate-300" />
@@ -315,14 +331,16 @@ function App() {
                   
                   <button
                     onClick={togglePlayPause}
-                    className="p-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
+                    className="p-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 touch-manipulation"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
                     {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
                   </button>
                   
                   <button
                     onClick={() => navigateSection('next')}
-                    className="p-3 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className="p-3 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 touch-manipulation"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                     disabled={currentSection === transcriptSections.length - 1}
                   >
                     <SkipForward className="w-5 h-5 text-slate-700 dark:text-slate-300" />
@@ -383,11 +401,12 @@ function App() {
               <button
                 onClick={() => navigateSection('prev')}
                 disabled={currentSection === 0}
-                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-200 touch-manipulation ${
                   currentSection === 0 
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500' 
                     : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
                 }`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <SkipBack className="w-5 h-5" />
                 Previous Section
@@ -400,11 +419,12 @@ function App() {
               <button
                 onClick={() => navigateSection('next')}
                 disabled={currentSection === transcriptSections.length - 1}
-                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-200 touch-manipulation ${
                   currentSection === transcriptSections.length - 1
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500' 
                     : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
                 }`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 Next Section
                 <SkipForward className="w-5 h-5" />
