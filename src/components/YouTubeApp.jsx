@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, RotateCcw, Upload, Download } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, RotateCcw, Upload, Download, Loader2 } from 'lucide-react';
 
 const YouTubeApp = ({ appData, audioFile }) => {
   const [currentSection, setCurrentSection] = useState(0);
@@ -7,6 +7,8 @@ const YouTubeApp = ({ appData, audioFile }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioSrc, setAudioSrc] = useState(audioFile);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionError, setExtractionError] = useState(null);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -91,8 +93,75 @@ const YouTubeApp = ({ appData, audioFile }) => {
     if (file) {
       const url = URL.createObjectURL(file);
       setAudioSrc(url);
+      setExtractionError(null);
     }
   };
+
+  const handleVideoUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setIsExtracting(true);
+    setExtractionError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+
+      const response = await fetch('/api/upload-video', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAudioSrc(result.audio_file);
+        setExtractionError(null);
+      } else {
+        setExtractionError(result.error || 'Failed to extract audio from video');
+      }
+    } catch (error) {
+      setExtractionError(`Video upload failed: ${error.message}`);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const extractAudioFromVideo = useCallback(async () => {
+    setIsExtracting(true);
+    setExtractionError(null);
+    
+    try {
+      const response = await fetch('/api/extract-audio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          videoUrl: appData.videoUrl 
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to extract audio: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.audio_file) {
+        const audioUrl = result.audio_file.replace('./public', '');
+        setAudioSrc(audioUrl);
+      } else {
+        throw new Error(result.error || 'Audio extraction failed');
+      }
+    } catch (error) {
+      console.error('Audio extraction error:', error);
+      setExtractionError(error.message);
+    } finally {
+      setIsExtracting(false);
+    }
+  }, [appData.videoUrl]);
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -122,18 +191,59 @@ const YouTubeApp = ({ appData, audioFile }) => {
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
             <h3 className="text-lg font-semibold text-yellow-800 mb-2">Audio Required</h3>
             <p className="text-yellow-700 mb-4">
-              Please upload an audio file extracted from the YouTube video to enable playback.
+              Extract audio automatically from the YouTube video or upload your own audio file.
             </p>
-            <label className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Audio File
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={handleAudioUpload}
-                className="hidden"
-              />
-            </label>
+            
+            {extractionError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-red-700 text-sm">
+                  <strong>Extraction failed:</strong> {extractionError}
+                </p>
+              </div>
+            )}
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={extractAudioFromVideo}
+                disabled={isExtracting}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Extracting Audio...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Extract Audio from Video
+                  </>
+                )}
+              </button>
+              
+              <label className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Video File
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoUpload}
+                  className="hidden"
+                  disabled={isExtracting}
+                />
+              </label>
+              
+              <label className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Audio File
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleAudioUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
           </div>
         )}
 
