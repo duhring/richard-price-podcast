@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, RotateCcw, Upload, Download, Loader2 } from 'lucide-react';
+import { PlaceholderImage } from '../utils/placeholderGenerator';
 
 const YouTubeApp = ({ appData, audioFile }) => {
   const [currentSection, setCurrentSection] = useState(0);
@@ -207,58 +208,99 @@ const YouTubeApp = ({ appData, audioFile }) => {
         </header>
 
         {!audioSrc && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Audio Required</h3>
-            <p className="text-yellow-700 mb-4">
-              Extract audio automatically from the YouTube video or upload your own audio file.
-            </p>
+          <div style={{
+            background: 'linear-gradient(135deg, #fffbeb 0%, #fed7aa 100%)',
+            border: '1px solid #fbbf24',
+            borderRadius: '0.75rem',
+            padding: '2rem',
+            marginBottom: '2rem'
+          }}>
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+                <Upload className="w-10 h-10 text-yellow-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-yellow-800 mb-2">Audio Required</h3>
+              <p className="text-yellow-700 text-lg">
+                Extract audio automatically from the YouTube video or upload your own content.
+              </p>
+            </div>
             
             {extractionError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                <p className="text-red-700 text-sm">
-                  <strong>Extraction failed:</strong> {extractionError}
-                </p>
+              <div style={{
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '0.5rem',
+                padding: '1rem',
+                marginBottom: '1.5rem'
+              }}>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-red-600 font-bold">!</span>
+                  </div>
+                  <p className="text-red-700">
+                    <strong>Extraction failed:</strong> {extractionError}
+                  </p>
+                </div>
               </div>
             )}
             
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="grid sm:grid-cols-3 gap-4">
               <button
                 onClick={extractAudioFromVideo}
                 disabled={isExtracting}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                style={{
+                  background: isExtracting ? '#9ca3af' : 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  color: 'white',
+                  borderRadius: '0.75rem',
+                  padding: '1rem 1.5rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: isExtracting ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                  border: 'none'
+                }}
               >
                 {isExtracting ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-3 animate-spin" />
                     Extracting Audio...
                   </>
                 ) : (
                   <>
-                    <Download className="w-4 h-4 mr-2" />
-                    Extract Audio from Video
+                    <Download className="w-5 h-5 mr-3" />
+                    Extract from Video
                   </>
                 )}
               </button>
               
-              <label className={`inline-flex items-center px-4 py-2 rounded-lg cursor-pointer transition-colors ${
-                isUploading || isExtracting 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-purple-600 hover:bg-purple-700'
-              } text-white`}>
+              <label style={{
+                background: (isUploading || isExtracting) ? '#9ca3af' : 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)',
+                color: 'white',
+                borderRadius: '0.75rem',
+                padding: '1rem 1.5rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: (isUploading || isExtracting) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+              }}>
                 {isUploading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Uploading Video...
+                    <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                    Uploading...
                   </>
                 ) : isExtracting ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Extracting Audio...
+                    <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                    Extracting...
                   </>
                 ) : (
                   <>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Video File
+                    <Upload className="w-5 h-5 mr-3" />
+                    Upload Video
                   </>
                 )}
                 <input
@@ -270,9 +312,20 @@ const YouTubeApp = ({ appData, audioFile }) => {
                 />
               </label>
               
-              <label className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Audio File
+              <label style={{
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)',
+                color: 'white',
+                borderRadius: '0.75rem',
+                padding: '1rem 1.5rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+              }}>
+                <Upload className="w-5 h-5 mr-3" />
+                Upload Audio
                 <input
                   type="file"
                   accept="audio/*"
@@ -286,16 +339,34 @@ const YouTubeApp = ({ appData, audioFile }) => {
 
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                {currentSectionData.title}
-              </h2>
-              <div className="prose prose-lg text-gray-700">
-                <p>{currentSectionData.text}</p>
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                  {currentSectionData.title}
+                </h2>
+                <div className="prose prose-lg text-gray-700">
+                  <p>{currentSectionData.text}</p>
+                </div>
+                <div className="mt-4 text-sm text-gray-500">
+                  Section {currentSection + 1} of {appData.sections.length} • 
+                  {formatTime(currentSectionData.startTime)} - {formatTime(currentSectionData.endTime)}
+                </div>
               </div>
-              <div className="mt-4 text-sm text-gray-500">
-                Section {currentSection + 1} of {appData.sections.length} • 
-                {formatTime(currentSectionData.startTime)} - {formatTime(currentSectionData.endTime)}
+              
+              <div className="border-t border-slate-200/60">
+                {currentSectionData.image ? (
+                  <img 
+                    src={currentSectionData.image}
+                    alt={currentSectionData.imageAlt || `Section ${currentSection + 1} visual`}
+                    className="w-full h-72 object-cover"
+                  />
+                ) : (
+                  <PlaceholderImage 
+                    sectionIndex={currentSection}
+                    sectionData={currentSectionData}
+                    className="w-full h-72"
+                  />
+                )}
               </div>
             </div>
 
@@ -351,13 +422,29 @@ const YouTubeApp = ({ appData, audioFile }) => {
                 <button
                   key={index}
                   onClick={() => seekToSection(index)}
-                  className={`w-full text-left p-4 rounded-lg transition-all duration-200 ${
+                  className={`w-full text-left p-4 rounded-lg transition-all duration-200 flex gap-4 ${
                     index === currentSection
                       ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                       : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                   }`}
                 >
-                  <div className="flex justify-between items-start">
+                  <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden">
+                    {section.image ? (
+                      <img 
+                        src={section.image}
+                        alt={section.imageAlt || `Section ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <PlaceholderImage 
+                        sectionIndex={index}
+                        sectionData={section}
+                        className="w-full h-full"
+                      />
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-between items-start flex-1">
                     <div className="flex-1">
                       <h4 className="font-semibold mb-1">{section.title}</h4>
                       <p className={`text-sm line-clamp-2 ${
