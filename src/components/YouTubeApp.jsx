@@ -112,7 +112,8 @@ const YouTubeApp = ({ appData, audioFile }) => {
       formData.append('video', file);
 
       console.log('Uploading video file...');
-      const response = await fetch('/api/upload-video', {
+      const apiUrl = `${window.location.protocol}//${window.location.host}/api/upload-video`;
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
       });
@@ -126,9 +127,12 @@ const YouTubeApp = ({ appData, audioFile }) => {
 
       if (result.success) {
         console.log('Setting audio source to:', result.audio_file);
-        setAudioSrc(result.audio_file);
+        const audioPath = result.audio_file.startsWith('/richard-price-podcast/') 
+          ? result.audio_file 
+          : `/richard-price-podcast${result.audio_file}`;
+        setAudioSrc(audioPath);
         setExtractionError(null);
-      } else {
+      }else {
         console.error('Upload failed:', result.error);
         setExtractionError(result.error || 'Failed to extract audio from video');
       }
@@ -147,7 +151,8 @@ const YouTubeApp = ({ appData, audioFile }) => {
     setExtractionError(null);
     
     try {
-      const response = await fetch('/api/extract-audio', {
+      const apiUrl = `${window.location.protocol}//${window.location.host}/api/extract-audio`;
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
