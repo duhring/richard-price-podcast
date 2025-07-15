@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [react(),tailwindcss()],
   base: '/richard-price-podcast/',
   server: {
-    allowedHosts: ['web-app-tunnel-u488x2tt.devinapps.com']
+    allowedHosts: ['layout-typography-app-tunnel-hxrhx4p7.devinapps.com']
   },
   resolve: {
     alias: {

@@ -150,7 +150,7 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [appMode, setAppMode] = useState('richard-price'); // 'richard-price' or 'youtube'
+  const [appMode, setAppMode] = useState('youtube'); // 'richard-price' or 'youtube'
   const [youtubeAppData, setYoutubeAppData] = useState(null);
   const audioRef = useRef(null);
 
