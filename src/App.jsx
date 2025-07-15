@@ -204,6 +204,8 @@ function App() {
     if (audio && sectionIndex >= 0 && sectionIndex < transcriptSections.length) {
       audio.currentTime = transcriptSections[sectionIndex].startTime;
       setCurrentSection(sectionIndex);
+      audio.play().catch(console.error);
+      setIsPlaying(true);
     }
   }, []);
 
