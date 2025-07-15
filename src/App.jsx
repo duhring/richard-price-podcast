@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, RotateCcw } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, RotateCcw, Youtube, Upload } from 'lucide-react';
+
+// Import YouTube processing components
+import YouTubeApp from './components/YouTubeApp';
+import { createYouTubeApp } from './utils/youtubeProcessor';
+
+// Import YouTube transcript data
+import youtubeTranscriptData from '../../youtube-transcript-processor/transcript_data.json';
 
 // Import assets
 import podcastAudio from './assets/Podcastreviewsound.m4a';
@@ -143,7 +150,16 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [appMode, setAppMode] = useState('richard-price'); // 'richard-price' or 'youtube'
+  const [youtubeAppData, setYoutubeAppData] = useState(null);
   const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (youtubeTranscriptData) {
+      const processedData = createYouTubeApp(youtubeTranscriptData);
+      setYoutubeAppData(processedData);
+    }
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -246,6 +262,10 @@ function App() {
     }
   }, [duration]);
 
+  if (appMode === 'youtube' && youtubeAppData) {
+    return <YouTubeApp appData={youtubeAppData} audioFile={null} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <audio ref={audioRef} src={podcastAudio} />
@@ -267,6 +287,30 @@ function App() {
                 Richard Price • In-Depth with Academia
               </p>
             </div>
+          </div>
+          
+          <div className="flex items-center space-x-4 ml-auto">
+            <button
+              onClick={() => setAppMode('richard-price')}
+              className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                appMode === 'richard-price'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+              }`}
+            >
+              Richard Price
+            </button>
+            <button
+              onClick={() => setAppMode('youtube')}
+              className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium flex items-center ${
+                appMode === 'youtube'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+              }`}
+            >
+              <Youtube className="w-4 h-4 mr-2" />
+              YouTube Demo
+            </button>
           </div>
         </div>
       </header>
