@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, RotateCcw } from 'lucide-react';
 
 // Import assets
@@ -163,15 +163,33 @@ function App() {
     }
   }, []);
 
+  const sectionStartTimes = useMemo(() => 
+    transcriptSections.map((section, index) => ({ startTime: section.startTime, index }))
+  , []);
+
   useEffect(() => {
-    // Auto-advance sections based on audio time
-    const currentSectionIndex = transcriptSections.findIndex(
-      section => currentTime >= section.startTime && currentTime < section.endTime
-    );
-    if (currentSectionIndex !== -1 && currentSectionIndex !== currentSection) {
+    const findCurrentSection = (currentTime) => {
+      let left = 0;
+      let right = sectionStartTimes.length - 1;
+      let result = 0;
+      
+      while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        if (sectionStartTimes[mid].startTime <= currentTime) {
+          result = sectionStartTimes[mid].index;
+          left = mid + 1;
+        } else {
+          right = mid - 1;
+        }
+      }
+      return result;
+    };
+
+    const currentSectionIndex = findCurrentSection(currentTime);
+    if (currentSectionIndex !== currentSection) {
       setCurrentSection(currentSectionIndex);
     }
-  }, [currentTime, currentSection]);
+  }, [currentTime, currentSection, sectionStartTimes]);
 
   const togglePlayPause = () => {
     const audio = audioRef.current;
