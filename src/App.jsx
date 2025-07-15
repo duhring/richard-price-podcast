@@ -235,19 +235,19 @@ function App() {
       <audio ref={audioRef} src={podcastAudio} />
       
       {/* Header */}
-      <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
+      <header className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-700/60 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <div className="flex items-center gap-5">
             <img 
               src={richardPriceImg} 
               alt="Richard Price" 
-              className="w-12 h-12 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600"
+              className="w-14 h-14 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600 shadow-md"
             />
             <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 AI Podcast Transcript Walkthrough
               </h1>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="text-base text-slate-600 dark:text-slate-400 font-medium">
                 Richard Price • In-Depth with Academia
               </p>
             </div>
@@ -255,33 +255,33 @@ function App() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        <div className="grid lg:grid-cols-3 gap-10">
           
           {/* Timeline Navigation */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 sticky top-24">
-              <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">Sections</h2>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 p-7 sticky top-28">
+              <h2 className="text-xl font-bold mb-6 text-slate-900 dark:text-slate-100 tracking-tight">Sections</h2>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {transcriptSections.map((section, index) => (
                   <button
                     key={section.id}
                     onClick={() => seekToSection(index)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors ${
+                    className={`w-full text-left p-4 rounded-xl transition-all duration-200 ${
                       index === currentSection
-                        ? 'bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-700'
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 shadow-sm transform scale-[1.02]'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:shadow-sm hover:transform hover:scale-[1.01]'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400 tracking-wide">
                         {formatTime(section.startTime)} - {formatTime(section.endTime)}
                       </span>
-                      <span className="bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 px-2 py-1 rounded text-xs">
+                      <span className="bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-full text-xs font-semibold">
                         {index + 1}
                       </span>
                     </div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 line-clamp-2">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 leading-relaxed">
                       {section.title}
                     </p>
                   </button>
@@ -294,86 +294,86 @@ function App() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* Audio Controls */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={goToStart}
-                    className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    className="p-3 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95"
                     title="Go to start"
                   >
-                    <RotateCcw className="w-5 h-5" />
+                    <RotateCcw className="w-5 h-5 text-slate-700 dark:text-slate-300" />
                   </button>
                   
                   <button
                     onClick={() => navigateSection('prev')}
-                    className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    className="p-3 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     disabled={currentSection === 0}
                   >
-                    <SkipBack className="w-5 h-5" />
+                    <SkipBack className="w-5 h-5 text-slate-700 dark:text-slate-300" />
                   </button>
                   
                   <button
                     onClick={togglePlayPause}
-                    className="p-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                    className="p-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
                   >
-                    {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                    {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
                   </button>
                   
                   <button
                     onClick={() => navigateSection('next')}
-                    className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    className="p-3 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     disabled={currentSection === transcriptSections.length - 1}
                   >
-                    <SkipForward className="w-5 h-5" />
+                    <SkipForward className="w-5 h-5 text-slate-700 dark:text-slate-300" />
                   </button>
                 </div>
                 
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <Volume2 className="w-4 h-4" />
-                  <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
+                <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <Volume2 className="w-5 h-5" />
+                  <span className="font-mono tracking-wider">{formatTime(currentTime)} / {formatTime(duration)}</span>
                 </div>
               </div>
               
               {/* Progress Bar */}
               <div 
-                className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 cursor-pointer"
+                className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 cursor-pointer hover:h-4 transition-all duration-200 shadow-inner"
                 onClick={handleProgressClick}
               >
                 <div 
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-300 shadow-sm"
                   style={{ width: `${(currentTime / duration) * 100}%` }}
                 />
               </div>
             </div>
 
             {/* Current Section Content */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
+              <div className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-full text-sm font-semibold shadow-sm">
                     Section {currentSection + 1} of {transcriptSections.length}
                   </span>
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400 font-mono tracking-wide">
                     {formatTime(transcriptSections[currentSection].startTime)} - {formatTime(transcriptSections[currentSection].endTime)}
                   </span>
                 </div>
                 
-                <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+                <h2 className="text-3xl font-bold mb-6 text-slate-900 dark:text-slate-100 leading-tight tracking-tight">
                   {transcriptSections[currentSection].title}
                 </h2>
                 
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-6">
+                <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-8 font-medium">
                   {transcriptSections[currentSection].content}
                 </p>
               </div>
               
               {/* Generated Image */}
-              <div className="border-t border-slate-200 dark:border-slate-600">
+              <div className="border-t border-slate-200/60 dark:border-slate-600/60">
                 <img 
                   src={transcriptSections[currentSection].image}
                   alt={transcriptSections[currentSection].imageAlt}
-                  className="w-full h-64 object-cover"
+                  className="w-full h-72 object-cover"
                 />
               </div>
             </div>
@@ -383,31 +383,31 @@ function App() {
               <button
                 onClick={() => navigateSection('prev')}
                 disabled={currentSection === 0}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
                   currentSection === 0 
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500' 
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
                 }`}
               >
-                <SkipBack className="w-4 h-4" />
+                <SkipBack className="w-5 h-5" />
                 Previous Section
               </button>
               
-              <span className="text-sm text-slate-600 dark:text-slate-400">
+              <span className="text-base font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-4 py-2 rounded-full">
                 {currentSection + 1} / {transcriptSections.length}
               </span>
               
               <button
                 onClick={() => navigateSection('next')}
                 disabled={currentSection === transcriptSections.length - 1}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
                   currentSection === transcriptSections.length - 1
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500' 
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
                 }`}
               >
                 Next Section
-                <SkipForward className="w-4 h-4" />
+                <SkipForward className="w-5 h-5" />
               </button>
             </div>
           </div>
