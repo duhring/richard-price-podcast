@@ -45,11 +45,16 @@ const upload = multer({
 });
 
 const audioDir = path.join(__dirname, 'public', 'audio');
+const videoSnippetsDir = path.join(__dirname, 'public', 'video-snippets');
 if (!fs.existsSync(audioDir)) {
   fs.mkdirSync(audioDir, { recursive: true });
 }
+if (!fs.existsSync(videoSnippetsDir)) {
+  fs.mkdirSync(videoSnippetsDir, { recursive: true });
+}
 
 app.use('/audio', express.static(path.join(__dirname, 'public', 'audio')));
+app.use('/video-snippets', express.static(path.join(__dirname, 'public', 'video-snippets')));
 
 app.post('/api/upload-video', upload.single('video'), async (req, res) => {
   if (!req.file) {
@@ -92,21 +97,21 @@ app.post('/api/upload-video', upload.single('video'), async (req, res) => {
     ffmpegProcess.on('close', (code) => {
       if (responseSent) return;
       
-      fs.unlink(videoPath, (err) => {
-        if (err) console.error('Error deleting video file:', err);
-      });
-      
       if (code === 0) {
         console.log('Audio extraction successful:', audioFileName);
         responseSent = true;
         res.json({
           success: true,
           audio_file: `/audio/${audioFileName}`,
+          video_file: req.file.filename,
           title: req.file.originalname,
           message: 'Audio extracted successfully from uploaded video'
         });
       } else {
         console.error('FFmpeg extraction failed:', error);
+        fs.unlink(videoPath, (err) => {
+          if (err) console.error('Error deleting video file:', err);
+        });
         responseSent = true;
         res.status(500).json({
           success: false,
@@ -195,6 +200,97 @@ app.post('/api/extract-audio', async (req, res) => {
         error: 'Audio extraction timed out'
       });
     }, 120000); // 2 minutes timeout
+    
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/generate-video-snippets', async (req, res) => {
+  const { videoFileName, sections } = req.body;
+  
+  if (!videoFileName || !sections) {
+    return res.status(400).json({
+      success: false,
+      error: 'Video filename and sections are required'
+    });
+  }
+
+  try {
+    const videoPath = path.join(__dirname, 'uploads', videoFileName);
+    const videoSnippetsDir = path.join(__dirname, 'public', 'video-snippets');
+    
+    if (!fs.existsSync(videoPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Video file not found'
+      });
+    }
+    
+    const snippetPromises = sections.map((section, index) => {
+      return new Promise((resolve, reject) => {
+        const snippetFileName = `snippet-${Date.now()}-${index}.mp4`;
+        const snippetPath = path.join(videoSnippetsDir, snippetFileName);
+        const duration = section.endTime - section.startTime;
+        
+        const ffmpegProcess = spawn('ffmpeg', [
+          '-i', videoPath,
+          '-ss', section.startTime.toString(),
+          '-t', duration.toString(),
+          '-c:v', 'libx264',
+          '-c:a', 'aac',
+          '-crf', '23',
+          '-preset', 'fast',
+          '-movflags', '+faststart',
+          '-y',
+          snippetPath
+        ]);
+        
+        let error = '';
+        
+        ffmpegProcess.stderr.on('data', (data) => {
+          error += data.toString();
+        });
+        
+        ffmpegProcess.on('close', (code) => {
+          if (code === 0) {
+            resolve({
+              sectionIndex: index,
+              snippetUrl: `/video-snippets/${snippetFileName}`,
+              startTime: section.startTime,
+              endTime: section.endTime
+            });
+          } else {
+            console.error(`Snippet generation failed for section ${index}:`, error);
+            reject(new Error(`Failed to generate snippet for section ${index}`));
+          }
+        });
+      });
+    });
+    
+    try {
+      const snippets = await Promise.all(snippetPromises);
+      
+      fs.unlink(videoPath, (err) => {
+        if (err) console.error('Error deleting video file:', err);
+      });
+      
+      res.json({
+        success: true,
+        snippets: snippets,
+        message: 'Video snippets generated successfully'
+      });
+    } catch (snippetError) {
+      console.error('Snippet generation error:', snippetError);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to generate one or more video snippets'
+      });
+    }
     
   } catch (error) {
     console.error('Server error:', error);

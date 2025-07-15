@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, RotateCcw, Upload, Download, Loader2 } from 'lucide-react';
-import { PlaceholderImage } from '../utils/placeholderGenerator';
+import { VideoSnippet } from './VideoSnippet';
 
 const YouTubeApp = ({ appData, audioFile }) => {
   const [currentSection, setCurrentSection] = useState(0);
@@ -10,7 +10,9 @@ const YouTubeApp = ({ appData, audioFile }) => {
   const [audioSrc, setAudioSrc] = useState(audioFile);
   const [isUploading, setIsUploading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isGeneratingSnippets, setIsGeneratingSnippets] = useState(false);
   const [extractionError, setExtractionError] = useState(null);
+  const [videoSnippets, setVideoSnippets] = useState({});
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -106,6 +108,7 @@ const YouTubeApp = ({ appData, audioFile }) => {
     console.log('Starting video upload:', file.name);
     setIsUploading(true);
     setIsExtracting(false);
+    setIsGeneratingSnippets(false);
     setExtractionError(null);
 
     try {
@@ -113,8 +116,8 @@ const YouTubeApp = ({ appData, audioFile }) => {
       formData.append('video', file);
 
       console.log('Uploading video file...');
-      const apiUrl = `${window.location.protocol}//${window.location.host}/api/upload-video`;
-      const response = await fetch(apiUrl, {
+      const backendUrl = `${window.location.protocol}//${window.location.hostname}:3001`;
+      const response = await fetch(`${backendUrl}/api/upload-video`, {
         method: 'POST',
         body: formData,
       });
@@ -128,12 +131,41 @@ const YouTubeApp = ({ appData, audioFile }) => {
 
       if (result.success) {
         console.log('Setting audio source to:', result.audio_file);
-        const audioPath = result.audio_file.startsWith('/richard-price-podcast/') 
-          ? result.audio_file 
-          : `/richard-price-podcast${result.audio_file}`;
+        const audioPath = `${backendUrl}${result.audio_file}`;
         setAudioSrc(audioPath);
         setExtractionError(null);
-      }else {
+        
+        setIsExtracting(false);
+        setIsGeneratingSnippets(true);
+        
+        console.log('Generating video snippets...');
+        const snippetResponse = await fetch(`${backendUrl}/api/generate-video-snippets`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            videoFileName: result.video_file,
+            sections: appData.sections
+          }),
+        });
+        
+        const snippetResult = await snippetResponse.json();
+        console.log('Snippet generation result:', snippetResult);
+        
+        if (snippetResult.success) {
+          const snippetsMap = {};
+          snippetResult.snippets.forEach(snippet => {
+            const snippetPath = `${backendUrl}${snippet.snippetUrl}`;
+            snippetsMap[snippet.sectionIndex] = snippetPath;
+          });
+          setVideoSnippets(snippetsMap);
+          console.log('Video snippets generated successfully');
+        } else {
+          console.error('Snippet generation failed:', snippetResult.error);
+          setExtractionError(`Snippet generation failed: ${snippetResult.error}`);
+        }
+      } else {
         console.error('Upload failed:', result.error);
         setExtractionError(result.error || 'Failed to extract audio from video');
       }
@@ -144,6 +176,7 @@ const YouTubeApp = ({ appData, audioFile }) => {
       console.log('Upload process completed');
       setIsUploading(false);
       setIsExtracting(false);
+      setIsGeneratingSnippets(false);
     }
   };
 
@@ -276,14 +309,14 @@ const YouTubeApp = ({ appData, audioFile }) => {
               </button>
               
               <label style={{
-                background: (isUploading || isExtracting) ? '#9ca3af' : 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)',
+                background: (isUploading || isExtracting || isGeneratingSnippets) ? '#9ca3af' : 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)',
                 color: 'white',
                 borderRadius: '0.75rem',
                 padding: '1rem 1.5rem',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: (isUploading || isExtracting) ? 'not-allowed' : 'pointer',
+                cursor: (isUploading || isExtracting || isGeneratingSnippets) ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s',
                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
               }}>
@@ -295,7 +328,12 @@ const YouTubeApp = ({ appData, audioFile }) => {
                 ) : isExtracting ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                    Extracting...
+                    Extracting Audio...
+                  </>
+                ) : isGeneratingSnippets ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                    Generating Video Snippets...
                   </>
                 ) : (
                   <>
@@ -308,7 +346,7 @@ const YouTubeApp = ({ appData, audioFile }) => {
                   accept="video/*"
                   onChange={handleVideoUpload}
                   className="hidden"
-                  disabled={isUploading || isExtracting}
+                  disabled={isUploading || isExtracting || isGeneratingSnippets}
                 />
               </label>
               
@@ -361,10 +399,14 @@ const YouTubeApp = ({ appData, audioFile }) => {
                     className="w-full h-72 object-cover"
                   />
                 ) : (
-                  <PlaceholderImage 
+                  <VideoSnippet 
                     sectionIndex={currentSection}
                     sectionData={currentSectionData}
+                    snippetUrl={videoSnippets[currentSection]}
                     className="w-full h-72"
+                    autoPlay={true}
+                    muted={true}
+                    controls={false}
                   />
                 )}
               </div>
@@ -436,10 +478,14 @@ const YouTubeApp = ({ appData, audioFile }) => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <PlaceholderImage 
+                      <VideoSnippet 
                         sectionIndex={index}
                         sectionData={section}
+                        snippetUrl={videoSnippets[index]}
                         className="w-full h-full"
+                        autoPlay={false}
+                        muted={true}
+                        controls={false}
                       />
                     )}
                   </div>
